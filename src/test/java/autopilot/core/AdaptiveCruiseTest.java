@@ -50,30 +50,14 @@ class AdaptiveCruiseTest {
     }
 
     private static Stream<Arguments> provideUpdateDecisions() {
-        // With TARGET_SPEED_KMH = 80.0:
-        // At speed = 80.0: safeDistance = 40.0, emergencyDistance = 20.0, releaseDistance = 48.0
         return Stream.of(
-                // 1. Emergency braking: distance <= emergencyDistance (20m)
                 Arguments.of(80.0, 15.0, Mode.EMERGENCY_BRAKE, EMERGENCY_PRESSURE),
                 Arguments.of(80.0, 20.0, Mode.EMERGENCY_BRAKE, EMERGENCY_PRESSURE),
-
-                // 2. Proportional braking: emergencyDistance < distance < safeDistance (40m)
-                // (40 - 30) / 40 * 100 = 25.0%
                 Arguments.of(80.0, 30.0, Mode.BRAKE, 25.0),
-
-                // 3. At boundary distance == safeDistance (neither < safe nor > safe)
                 Arguments.of(80.0, 40.0, Mode.HOLD, 0.0),
-
-                // 4. Acceleration capped at MAX_ACCELERATION_STEP_KMH (5.0 km/h)
                 Arguments.of(60.0, 50.0, Mode.ACCELERATE, 5.0),
-
-                // 5. Acceleration below MAX_ACCELERATION_STEP_KMH (target 80 - current 78 = 2.0 km/h)
                 Arguments.of(78.0, 50.0, Mode.ACCELERATE, 2.0),
-
-                // 6. Holding speed when current speed == target speed and distance is safe
                 Arguments.of(80.0, 50.0, Mode.HOLD, 0.0),
-
-                // 7. Holding speed when current speed > target speed
                 Arguments.of(85.0, 50.0, Mode.HOLD, 0.0)
         );
     }
@@ -106,10 +90,8 @@ class AdaptiveCruiseTest {
 
     @Test
     void update_WithinHysteresisReleaseZone_MaintainsHysteresisBraking() {
-        // Step 1: Engage braking at speed 80 km/h with distance 30m (< safeDistance 40m)
         adaptiveCruise.update(80.0, 30.0);
 
-        // Step 2: Distance increases to 44m (> safeDistance 40m, but < releaseDistance 48m)
         Decision decision = adaptiveCruise.update(80.0, 44.0);
 
         assertEquals(Mode.BRAKE, decision.mode());
@@ -118,10 +100,8 @@ class AdaptiveCruiseTest {
 
     @Test
     void update_ExceedingReleaseDistance_ReleasesBrakeAndAccelerates() {
-        // Step 1: Engage braking at speed 70 km/h with distance 25m (< safeDistance 35m)
         adaptiveCruise.update(70.0, 25.0);
 
-        // Step 2: Distance clears past releaseDistance (1.2 * 35 = 42m)
         Decision decision = adaptiveCruise.update(70.0, 45.0);
 
         assertEquals(Mode.ACCELERATE, decision.mode());

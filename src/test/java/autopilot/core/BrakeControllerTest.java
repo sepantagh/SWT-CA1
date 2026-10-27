@@ -93,8 +93,8 @@ class BrakeControllerTest {
 
     @ParameterizedTest
     @CsvSource({
-            "80.0, 60.0, 80.0", // At ABS pressure boundary (80.0) -> does not trigger ABS
-            "95.0, 30.0, 95.0"  // At ABS speed boundary (30.0) -> does not trigger ABS
+            "80.0, 60.0, 80.0",
+            "95.0, 30.0, 95.0"
     })
     void apply_AtAbsThresholdBoundaries_DoesNotTriggerAbs(
             double requestedPressure, double speedKmh, double expectedPressure) {
@@ -117,14 +117,11 @@ class BrakeControllerTest {
 
     @Test
     void apply_AbsConditionsStop_ResetsPulseSequence() {
-        // Trigger pulse 1 (high pulse)
         brakeController.apply(HIGH_PRESSURE, ABS_ACTIVE_SPEED_KMH, Gear.D);
 
-        // Conditions drop below ABS threshold
         double intermediatePressure = brakeController.apply(NORMAL_PRESSURE, BELOW_ABS_SPEED_KMH, Gear.D);
         assertEquals(NORMAL_PRESSURE, intermediatePressure);
 
-        // Next ABS trigger should start afresh with high pulse
         double nextPulse = brakeController.apply(HIGH_PRESSURE, ABS_ACTIVE_SPEED_KMH, Gear.D);
         assertEquals(ABS_HIGH_PULSE, nextPulse);
     }
