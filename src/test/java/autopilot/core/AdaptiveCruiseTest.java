@@ -19,7 +19,6 @@ class AdaptiveCruiseTest {
     private static final double TARGET_SPEED_KMH = 80.0;
     private static final double ZERO_SPEED_KMH = 0.0;
     private static final double ZERO_DISTANCE_METERS = 0.0;
-    private static final double NEGATIVE_VALUE = -5.0;
 
     private static final double HYSTERESIS_PRESSURE = 10.0;
     private static final double EMERGENCY_PRESSURE = 100.0;

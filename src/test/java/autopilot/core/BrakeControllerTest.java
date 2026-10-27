@@ -12,20 +12,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BrakeControllerTest {
 
-    private static final double ZERO_SPEED_KMH = 0.0;
     private static final double CITY_SPEED_KMH = 50.0;
-    private static final double ABS_SPEED_THRESHOLD_KMH = 30.0;
     private static final double ABS_ACTIVE_SPEED_KMH = 60.0;
     private static final double BELOW_ABS_SPEED_KMH = 20.0;
 
     private static final double NORMAL_PRESSURE = 50.0;
-    private static final double ABS_PRESSURE_THRESHOLD = 80.0;
     private static final double HIGH_PRESSURE = 95.0;
     private static final double EXCESSIVE_PRESSURE = 150.0;
     private static final double MAX_PRESSURE = 100.0;
     private static final double ABS_HIGH_PULSE = 90.0;
     private static final double ABS_LOW_PULSE = 60.0;
-    private static final double NEGATIVE_VALUE = -10.0;
 
     private BrakeController brakeController;
 

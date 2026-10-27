@@ -12,9 +12,6 @@ class SteeringControllerTest {
 
     private static final double ZERO_ANGLE_DEGREES = 0.0;
     private static final double CITY_SPEED_KMH = 50.0;
-    private static final double HIGHWAY_SPEED_KMH = 130.0;
-    private static final double THRESHOLD_SPEED_KMH = 120.0;
-    private static final double NEGATIVE_SPEED_KMH = -10.0;
     private static final double MAX_CHANGE_PER_TICK_DEGREES = 60.0;
 
     private SteeringController steeringController;
