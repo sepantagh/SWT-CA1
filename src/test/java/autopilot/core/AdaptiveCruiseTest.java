@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvFileSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.stream.Stream;
 
@@ -78,50 +79,22 @@ class AdaptiveCruiseTest {
         );
     }
 
-    @Test
-    void safeDistanceFor_NegativeSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.safeDistanceFor(NEGATIVE_VALUE));
+    @ParameterizedTest
+    @ValueSource(doubles = {-5.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void safeDistanceFor_InvalidSpeed_ThrowsIllegalArgumentException(double invalidSpeed) {
+        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.safeDistanceFor(invalidSpeed));
     }
 
-    @Test
-    void safeDistanceFor_NaNSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.safeDistanceFor(Double.NaN));
+    @ParameterizedTest
+    @ValueSource(doubles = {-5.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void update_InvalidSpeed_ThrowsIllegalArgumentException(double invalidSpeed) {
+        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.update(invalidSpeed, 50.0));
     }
 
-    @Test
-    void safeDistanceFor_InfiniteSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.safeDistanceFor(Double.POSITIVE_INFINITY));
-    }
-
-    @Test
-    void update_NegativeSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.update(NEGATIVE_VALUE, 50.0));
-    }
-
-    @Test
-    void update_NaNSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.update(Double.NaN, 50.0));
-    }
-
-    @Test
-    void update_InfiniteSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.update(Double.POSITIVE_INFINITY, 50.0));
-    }
-
-    @Test
-    void update_NegativeDistance_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.update(TARGET_SPEED_KMH, NEGATIVE_VALUE));
-    }
-
-    @Test
-    void update_NaNDistance_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.update(TARGET_SPEED_KMH, Double.NaN));
-    }
-
-    @Test
-    void update_InfiniteDistance_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                adaptiveCruise.update(TARGET_SPEED_KMH, Double.POSITIVE_INFINITY));
+    @ParameterizedTest
+    @ValueSource(doubles = {-5.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void update_InvalidDistance_ThrowsIllegalArgumentException(double invalidDistance) {
+        assertThrows(IllegalArgumentException.class, () -> adaptiveCruise.update(TARGET_SPEED_KMH, invalidDistance));
     }
 
     @Test

@@ -4,7 +4,9 @@ import autopilot.core.GearBox.Gear;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,40 +65,18 @@ class BrakeControllerTest {
                 brakeController.apply(NORMAL_PRESSURE, CITY_SPEED_KMH, null));
     }
 
-    @Test
-    void apply_NegativePressure_ThrowsIllegalArgumentException() {
+    @ParameterizedTest
+    @ValueSource(doubles = {-10.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void apply_InvalidPressureValue_ThrowsIllegalArgumentException(double invalidPressure) {
         assertThrows(IllegalArgumentException.class, () ->
-                brakeController.apply(NEGATIVE_VALUE, CITY_SPEED_KMH, Gear.D));
+                brakeController.apply(invalidPressure, CITY_SPEED_KMH, Gear.D));
     }
 
-    @Test
-    void apply_NaNPressure_ThrowsIllegalArgumentException() {
+    @ParameterizedTest
+    @ValueSource(doubles = {-10.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void apply_InvalidSpeedValue_ThrowsIllegalArgumentException(double invalidSpeed) {
         assertThrows(IllegalArgumentException.class, () ->
-                brakeController.apply(Double.NaN, CITY_SPEED_KMH, Gear.D));
-    }
-
-    @Test
-    void apply_InfinitePressure_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                brakeController.apply(Double.POSITIVE_INFINITY, CITY_SPEED_KMH, Gear.D));
-    }
-
-    @Test
-    void apply_NegativeSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                brakeController.apply(NORMAL_PRESSURE, NEGATIVE_VALUE, Gear.D));
-    }
-
-    @Test
-    void apply_NaNSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                brakeController.apply(NORMAL_PRESSURE, Double.NaN, Gear.D));
-    }
-
-    @Test
-    void apply_InfiniteSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                brakeController.apply(NORMAL_PRESSURE, Double.POSITIVE_INFINITY, Gear.D));
+                brakeController.apply(NORMAL_PRESSURE, invalidSpeed, Gear.D));
     }
 
     @Test
@@ -115,18 +95,16 @@ class BrakeControllerTest {
         assertEquals(MAX_PRESSURE, pressure);
     }
 
-    @Test
-    void apply_AtAbsPressureBoundary_DoesNotTriggerAbs() {
-        double pressure = brakeController.apply(ABS_PRESSURE_THRESHOLD, ABS_ACTIVE_SPEED_KMH, Gear.D);
+    @ParameterizedTest
+    @CsvSource({
+            "80.0, 60.0, 80.0", // At ABS pressure boundary (80.0) -> does not trigger ABS
+            "95.0, 30.0, 95.0"  // At ABS speed boundary (30.0) -> does not trigger ABS
+    })
+    void apply_AtAbsThresholdBoundaries_DoesNotTriggerAbs(
+            double requestedPressure, double speedKmh, double expectedPressure) {
+        double pressure = brakeController.apply(requestedPressure, speedKmh, Gear.D);
 
-        assertEquals(ABS_PRESSURE_THRESHOLD, pressure);
-    }
-
-    @Test
-    void apply_AtAbsSpeedBoundary_DoesNotTriggerAbs() {
-        double pressure = brakeController.apply(HIGH_PRESSURE, ABS_SPEED_THRESHOLD_KMH, Gear.D);
-
-        assertEquals(HIGH_PRESSURE, pressure);
+        assertEquals(expectedPressure, pressure);
     }
 
     @Test

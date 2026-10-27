@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,33 +49,17 @@ class SteeringControllerTest {
         assertEquals(expectedCurrentAngle, steeringController.getCurrentAngleDegrees());
     }
 
-    @Test
-    void update_NaNAngle_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> steeringController.update(Double.NaN, CITY_SPEED_KMH));
+    @ParameterizedTest
+    @ValueSource(doubles = {Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void update_InvalidAngle_ThrowsIllegalArgumentException(double invalidAngle) {
+        assertThrows(IllegalArgumentException.class, () -> steeringController.update(invalidAngle, CITY_SPEED_KMH));
     }
 
-    @Test
-    void update_InfiniteAngle_ThrowsIllegalArgumentException() {
+    @ParameterizedTest
+    @ValueSource(doubles = {-10.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void update_InvalidSpeed_ThrowsIllegalArgumentException(double invalidSpeed) {
         assertThrows(IllegalArgumentException.class, () ->
-                steeringController.update(Double.POSITIVE_INFINITY, CITY_SPEED_KMH));
-    }
-
-    @Test
-    void update_NegativeSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                steeringController.update(ZERO_ANGLE_DEGREES, NEGATIVE_SPEED_KMH));
-    }
-
-    @Test
-    void update_NaNSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                steeringController.update(ZERO_ANGLE_DEGREES, Double.NaN));
-    }
-
-    @Test
-    void update_InfiniteSpeed_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                steeringController.update(ZERO_ANGLE_DEGREES, Double.POSITIVE_INFINITY));
+                steeringController.update(ZERO_ANGLE_DEGREES, invalidSpeed));
     }
 
     @Test
@@ -88,9 +73,9 @@ class SteeringControllerTest {
         assertEquals(requestedAngle, tick2);
     }
 
-    @Test
-    void selfCenter_WithinSlewLimit_ReachesZeroInSingleTick() {
-        double initialAngle = 45.0;
+    @ParameterizedTest
+    @ValueSource(doubles = {45.0, -45.0, 60.0, -60.0})
+    void selfCenter_WithinSlewLimit_ReachesZeroInSingleTick(double initialAngle) {
         steeringController.update(initialAngle, CITY_SPEED_KMH);
 
         double centeredAngle = steeringController.selfCenter();
@@ -99,37 +84,18 @@ class SteeringControllerTest {
         assertEquals(ZERO_ANGLE_DEGREES, steeringController.getCurrentAngleDegrees());
     }
 
-    @Test
-    void selfCenter_NegativeWithinSlewLimit_ReachesZeroInSingleTick() {
-        double initialAngle = -45.0;
+    @ParameterizedTest
+    @CsvSource({
+            "100.0,   40.0",
+            "-100.0, -40.0"
+    })
+    void selfCenter_BeyondSlewLimit_MovesTowardZeroByMaxChangePerTick(
+            double initialAngle, double expectedFirstStep) {
         steeringController.update(initialAngle, CITY_SPEED_KMH);
-
-        double centeredAngle = steeringController.selfCenter();
-
-        assertEquals(ZERO_ANGLE_DEGREES, centeredAngle);
-    }
-
-    @Test
-    void selfCenter_BeyondSlewLimit_MovesTowardZeroByMaxChangePerTick() {
-        double initialAngle = 100.0;
-        steeringController.update(initialAngle, CITY_SPEED_KMH);
-        steeringController.update(initialAngle, CITY_SPEED_KMH); // reaches 100.0
+        steeringController.update(initialAngle, CITY_SPEED_KMH); // reaches initialAngle
 
         double step1 = steeringController.selfCenter();
-        assertEquals(40.0, step1);
-
-        double step2 = steeringController.selfCenter();
-        assertEquals(ZERO_ANGLE_DEGREES, step2);
-    }
-
-    @Test
-    void selfCenter_NegativeBeyondSlewLimit_MovesTowardZeroByMaxChangePerTick() {
-        double initialAngle = -100.0;
-        steeringController.update(initialAngle, CITY_SPEED_KMH);
-        steeringController.update(initialAngle, CITY_SPEED_KMH); // reaches -100.0
-
-        double step1 = steeringController.selfCenter();
-        assertEquals(-40.0, step1);
+        assertEquals(expectedFirstStep, step1);
 
         double step2 = steeringController.selfCenter();
         assertEquals(ZERO_ANGLE_DEGREES, step2);

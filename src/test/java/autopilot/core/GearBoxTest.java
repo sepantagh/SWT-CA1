@@ -6,6 +6,8 @@ import autopilot.sensor.SpeedSensor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,58 +62,45 @@ class GearBoxTest {
     }
 
     @Test
-    void changeTo_ParkToReverseAboveSpeedLimit_ThrowsIllegalGearChangeException() {
+    void changeTo_ParkToReverseAboveSpeedLimit_ThrowsExceptionAndPreservesCurrentGear() {
         speedSensor.setSpeed(SPEED_ABOVE_LIMIT_KMH);
 
         assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.R));
+        assertEquals(Gear.P, gearBox.getCurrentGear());
     }
 
-    @Test
-    void changeTo_ParkToDriveDirectly_ThrowsIllegalGearChangeException() {
+    @ParameterizedTest
+    @EnumSource(value = Gear.class, names = {"D", "N"})
+    void changeTo_ParkToDisallowedGearDirectly_ThrowsIllegalGearChangeException(Gear disallowedTargetGear) {
         speedSensor.setSpeed(ZERO_SPEED_KMH);
 
-        assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.D));
+        assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(disallowedTargetGear));
     }
 
-    @Test
-    void changeTo_ParkToNeutralDirectly_ThrowsIllegalGearChangeException() {
-        speedSensor.setSpeed(ZERO_SPEED_KMH);
+    @ParameterizedTest
+    @CsvSource({
+            "R, D",
+            "D, R"
+    })
+    void changeTo_BetweenReverseAndDriveAtZeroSpeed_TransitionsSuccessfully(Gear fromGear, Gear toGear) {
+        transitionTo(fromGear, ZERO_SPEED_KMH);
 
-        assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.N));
+        gearBox.changeTo(toGear);
+
+        assertEquals(toGear, gearBox.getCurrentGear());
     }
 
-    @Test
-    void changeTo_ReverseToDriveAtZeroSpeed_TransitionsSuccessfully() {
-        transitionTo(Gear.R, ZERO_SPEED_KMH);
-
-        gearBox.changeTo(Gear.D);
-
-        assertEquals(Gear.D, gearBox.getCurrentGear());
-    }
-
-    @Test
-    void changeTo_ReverseToDriveWhileMoving_ThrowsIllegalGearChangeException() {
-        transitionTo(Gear.R, ZERO_SPEED_KMH);
+    @ParameterizedTest
+    @CsvSource({
+            "R, D",
+            "D, R"
+    })
+    void changeTo_BetweenReverseAndDriveWhileMoving_ThrowsIllegalGearChangeException(
+            Gear fromGear, Gear toGear) {
+        transitionTo(fromGear, ZERO_SPEED_KMH);
         speedSensor.setSpeed(MOVING_SPEED_KMH);
 
-        assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.D));
-    }
-
-    @Test
-    void changeTo_DriveToReverseAtZeroSpeed_TransitionsSuccessfully() {
-        transitionTo(Gear.D, ZERO_SPEED_KMH);
-
-        gearBox.changeTo(Gear.R);
-
-        assertEquals(Gear.R, gearBox.getCurrentGear());
-    }
-
-    @Test
-    void changeTo_DriveToReverseWhileMoving_ThrowsIllegalGearChangeException() {
-        transitionTo(Gear.D, ZERO_SPEED_KMH);
-        speedSensor.setSpeed(MOVING_SPEED_KMH);
-
-        assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.R));
+        assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(toGear));
     }
 
     @Test
@@ -141,33 +130,12 @@ class GearBoxTest {
         assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.N));
     }
 
-    @Test
-    void changeTo_NegativeSpeed_ThrowsIllegalArgumentException() {
-        speedSensor.setSpeed(NEGATIVE_SPEED_KMH);
+    @ParameterizedTest
+    @ValueSource(doubles = {-1.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+    void changeTo_InvalidSpeedValue_ThrowsIllegalArgumentException(double invalidSpeed) {
+        speedSensor.setSpeed(invalidSpeed);
 
         assertThrows(IllegalArgumentException.class, () -> gearBox.changeTo(Gear.R));
-    }
-
-    @Test
-    void changeTo_NaNSpeed_ThrowsIllegalArgumentException() {
-        speedSensor.setSpeed(Double.NaN);
-
-        assertThrows(IllegalArgumentException.class, () -> gearBox.changeTo(Gear.R));
-    }
-
-    @Test
-    void changeTo_InfiniteSpeed_ThrowsIllegalArgumentException() {
-        speedSensor.setSpeed(Double.POSITIVE_INFINITY);
-
-        assertThrows(IllegalArgumentException.class, () -> gearBox.changeTo(Gear.R));
-    }
-
-    @Test
-    void changeTo_IllegalTransitionAttempted_PreservesOriginalGear() {
-        speedSensor.setSpeed(SPEED_ABOVE_LIMIT_KMH);
-
-        assertThrows(IllegalGearChangeException.class, () -> gearBox.changeTo(Gear.R));
-        assertEquals(Gear.P, gearBox.getCurrentGear());
     }
 
     private void transitionTo(Gear target, double speed) {
